@@ -42,6 +42,7 @@ class DataIngestion:
                 self.ingestion_config.train_data_path,
                 self.ingestion_config.test_data_path
             )
+        
         except Exception as e:
             logging.info("Exception Occurred at Data Ingestion Stage.")
             raise CustomException(e, sys)

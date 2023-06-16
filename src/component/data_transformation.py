@@ -32,27 +32,28 @@ class DataTransformation:
 
             # Separate features based on Categorical and Numerical features:
             categorical_col = ['X6']
-            numerical_col = ['X1', 'X2', 'X3', 'X4', 'X5', 'X7', 'X8', 'Y1', 'Y2']
+            numerical_col = ['X1', 'X2', 'X3', 'X4', 'X5', 'X7', 'X8']
+
 
             logging.info('Pipeline Inited...')
 
             ## Numerical Pipeline: 
             num_pipeline = Pipeline(
                 steps= [
-                    ('scaler', StandardScaler())
+                    ('scaler', StandardScaler(with_mean=False))
                 ]
             )
 
             ## Categorical Pipeline: 
             cat_pipeline = Pipeline(
                 steps= [
-                    ('onehotencoding', OneHotEncoder())
-                    ('scaler', StandardScaler())
+                    ('one_hot_encoder', OneHotEncoder()),
+                    ('scaler', StandardScaler(with_mean=False))
                 ]
             )
 
             preprocessor = ColumnTransformer([
-                ('num_pipeline', num_pipeline, numerical_col)
+                ('num_pipeline', num_pipeline, numerical_col),
                 ('cat_pipeline', cat_pipeline, categorical_col)
             ])
 
@@ -61,57 +62,56 @@ class DataTransformation:
             return preprocessor
             
         except Exception as e:
-            logging.error('Error in data Transformation step')
+            logging.error('Error in Get data Transformation step')
             raise CustomException(e, sys)
         
-# Data Transformation using the Preprocessor:
+    # Data Transformation using the Preprocessor:
 
-def initiate_data_transformation(self, train_path, test_path):
-    try:
-        # loading train and test data
-        train_df = pd.read_csv(train_path)
-        test_df = pd.read_csv(test_path)
+    def initiate_data_transformation(self, train_path, test_path):
+        try:
+            # loading train and test data
+            train_df = pd.read_csv(train_path)
+            test_df = pd.read_csv(test_path)
+            
+            # logging few details: 
+            logging.info('Read train and test data completed')
+            logging.info(f'Train Dataframe Head : \n{train_df.head().to_string()}')
+            logging.info(f'Test Dataframe Head  : \n{test_df.head().to_string()}')
+
+            logging.info('Obtaining preprocessing object')
+
+            # Creating preprocessing object:
+            preprocessing_obj = self.get_data_transformation_object()
+
+            # Separating dependent and independent features:
+            target_column_name = ['Y1', 'Y2'] # 'Y1'
+
+            input_feature_train_df = train_df.drop(columns=target_column_name, axis=1)
+            target_feature_train_df = train_df[target_column_name]
+
+            input_feature_test_df = test_df.drop(columns=target_column_name, axis=1)
+            target_feature_test_df = test_df[target_column_name]
+
+            ## Transforming using preprocessor obj:
+            input_feature_train_arr = preprocessing_obj.fit_transform(input_feature_train_df)
+            input_feature_test_arr = preprocessing_obj.transform(input_feature_test_df)
+
+            logging.info("Applying preprocessing object on training and testing datasets.")
+
+            train_arr = np.c_[input_feature_train_arr, np.array(target_feature_train_df)]
+            test_arr = np.c_[input_feature_test_arr, np.array(target_feature_test_df)]
+
+            save_object(
+                file_path = self.data_transformation_config.preprocessor_obj_file_path, 
+                obj = preprocessing_obj
+            )
+
+            logging.info('Preprocessing pickle file saved')
+
+            return (
+                train_arr,
+                test_arr
+            )
         
-        # logging few details: 
-        logging.info('Read train and test data completed')
-        logging.info(f'Train Dataframe Head : \n{train_df.head().to_string()}')
-        logging.info(f'Test Dataframe Head  : \n{test_df.head().to_string()}')
-
-        logging.info('Obtaining preprocessing object')
-
-        # Creating preprocessing object:
-        preprocessing_obj = self.get_data_transformation_object()
-
-        # Separating dependent and independent features:
-        target_column_name = 'Y1'
-
-        input_feature_train_df = train_df.drop(columns=target_column_name, axis=1)
-        target_feature_train_df = train_df[target_column_name]
-
-        input_feature_test_df = test_df.drop(columns=target_column_name, axis=1)
-        target_feature_test_df = test_df[target_column_name]
-
-        ## Transforming using preprocessor obj:
-        input_feature_train_arr = preprocessing_obj.fit_transform(input_feature_train_df)
-        input_feature_test_arr = preprocessing_obj.transform(input_feature_test_df)
-
-        logging.info("Applying preprocessing object on training and testing datasets.")
-
-        train_arr = np.c_[input_feature_train_arr, np.array(target_feature_train_df)]
-        test_arr = np.c_[input_feature_test_arr, np.array(target_feature_test_df)]
-
-        save_object(
-            file_path = self.data_transformation_config.preprocessor_obj_file_path, 
-            obj = preprocessing_obj
-        )
-
-        logging.info('Preprocessing pickle file saved')
-
-        return (
-            train_arr,
-            test_arr,
-            self.data_transformation_config.preprocessor_obj_file_path
-        )
-    
-    except Exception as e:
-        logging.info('Exception occured in the initiate ')
+        except Exception as e:
+            logging.info('Exception occurred in the Initiate Data Transformation step')
