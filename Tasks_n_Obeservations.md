@@ -16,5 +16,6 @@ Excel files offer more features for data analysis and visualization. So our main
 
 3. At the initial stages make sure you create a venv and run requirements.txt with -e . so... your project will be created as package.
 
-4. 
+4. after comparing all the models we got best results form Random Forest. 
 
+![Alt text](Assets/compare_model.png)
